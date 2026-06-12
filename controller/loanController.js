@@ -158,4 +158,12 @@ const getUpcomingpayments =async(req,res)=>{
         res.status(500).json({message:"Error fetching payments",err})
     }
 }
-module.exports = {addLoan,getAllLoan,getLoanById,updateLoan,deleteLoan,getInstallments,markPaid,getPaidHistory,getUpcomingpayments}
+const getCalendarInstallments = async(req,res)=>{
+    try{
+    const calInstallments = await installmentModel.find().populate("loanId");
+    res.status(200).json({calInstallments})
+    }catch(err){
+        res.status(500).json(err);
+    }
+}
+module.exports = {addLoan,getAllLoan,getLoanById,updateLoan,deleteLoan,getInstallments,markPaid,getPaidHistory,getUpcomingpayments,getCalendarInstallments}
