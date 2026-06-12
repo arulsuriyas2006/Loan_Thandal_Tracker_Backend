@@ -7,7 +7,11 @@ const loanSchema = new mongoose.Schema(
        frequency:{type:String,required:true},
        date:{type:Date,required:true},
        installmentamount:{type:Number,required:true},
-       term:{type:Number,required:true}
+       term:{type:Number,required:true},
+       paidAmount:{type:Number,default:0},
+       unpaidAmount:{type:Number,default:0},
+       paidCount:{type:Number,default:0},
+       unpaidCount:{type:Number,default:0},
     },{
         timestamps:true
     }
