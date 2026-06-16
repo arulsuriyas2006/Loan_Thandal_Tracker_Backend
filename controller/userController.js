@@ -2,6 +2,7 @@ const userModel =require("../model/user_model")
 const validator = require("validator")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
+const jwt_secret = process.env.JWT_SECRET
 const addUser = async(req,res)=>{
     try{
      const newUser = {
@@ -40,10 +41,13 @@ const login =async(req,res)=>{
      }
      const compare = await bcrypt.compare(login.password,user.password)
      if(compare){
-   
-      return res.status(400).json({message:"Invalid password"})
+      const token = jwt.sign({userId:user._id,email:user.email},jwt_secret,{expiresIn:""})
+      console.log(token)
+      res.cookie('token',token)
+      res.status(200).json({message:"login successfull",user:user})
+     }else{
+     res.status(401).json({message:"Invalid Credential",user})
      }
-     res.status(200).json({message:"login successfull",user})
     }catch(err){
      res.status(500).json({message:"Invalid credential",user})
     }
