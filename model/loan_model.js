@@ -12,6 +12,7 @@ const loanSchema = new mongoose.Schema(
        unpaidAmount:{type:Number,default:0},
        paidCount:{type:Number,default:0},
        unpaidCount:{type:Number,default:0},
+       userID:{type:String,required:true}
     },{
         timestamps:true
     }

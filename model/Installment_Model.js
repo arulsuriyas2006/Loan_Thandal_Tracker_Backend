@@ -22,6 +22,10 @@ const installmentSchema =new mongoose.Schema(
         paidDate:{
             type:Date,
             default:null
+        },
+        userID:{
+            type:String,
+            required:true
         }
 
    },
