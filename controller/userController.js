@@ -83,7 +83,8 @@ const login =async(req,res)=>{
       console.log(token)
       res.cookie('token',token,{
          httpOnly:true,
-         sameSite:"lax",
+         secure: true,
+         sameSite: "none",
          maxAge:24*60*60*1000
       })
       res.status(200).json({message:"login successfull",user:user})
@@ -108,7 +109,8 @@ const logout = async(req,res)=>{
    try{
     res.clearCookie("token",{
       httpOnly:true,
-      sameSite:"lax"
+      secure: true,
+      sameSite:"none"
     })
     console.log("cookie Cleared")
     res.status(200).json({message:"Logout successful"})
@@ -125,7 +127,8 @@ const deleteAccount=async(req,res)=>{
     const deactivate = await userModel.findByIdAndDelete({_id:userid})
     res.clearCookie("token", {
       httpOnly: true,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
     });
     console.log("cookie Cleared")
     res.status(200).json({message:"Account deleted Successfully"})
