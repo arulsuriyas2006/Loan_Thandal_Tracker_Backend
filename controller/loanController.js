@@ -109,6 +109,11 @@ const markPaid = async(req,res)=>{
         const authuserID =req.user
         const authemail = req.email
         const m = await installmentModel.findById(req.params.id);
+        if(!m){
+    return res.status(404).json({
+        message:"Installment not found"
+    });
+}
         if(m.paid){
             return res.status(400).json({message:"Already paid"});
         }
