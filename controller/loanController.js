@@ -30,7 +30,24 @@ const addLoan = async(req,res)=>{
 
     for(let i=0;i<ln.term;i++){
         const dueDate = new Date(ln.date);
-        dueDate.setMonth(dueDate.getMonth()+i);
+    if(ln.frequency === "d"){
+        dueDate.setDate(dueDate.getDate() + i);
+    }
+
+    // Weekly
+    else if(ln.frequency === "w"){
+        dueDate.setDate(dueDate.getDate() + (i * 7));
+    }
+
+    // Monthly
+    else if(ln.frequency === "m"){
+        dueDate.setMonth(dueDate.getMonth() + i);
+    }
+
+    // Yearly
+    else if(ln.frequency === "y"){
+        dueDate.setFullYear(dueDate.getFullYear() + i);
+    }
 
         installments.push({
             loanId:ln._id,
