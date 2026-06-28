@@ -177,48 +177,166 @@ const getLoanById =async(req,res)=>{
 
 const updateLoan = async(req,res)=>{
     try{
-        const authuserID =req.user
-        const authemail = req.email
-     const updateloan = await loan.findByIdAndUpdate(req.params.id,{
-        name:req.body.name,
-        totalamount:Number(req.body.totalamount),
-        frequency:req.body.frequency,
-        date:req.body.date,
-        installmentamount:Number(req.body.installmentamount),
-        term:Number(req.body.term)
-     },{new:true})
-    if(!updateloan){
-        res.status(404).json({message:"loan id not found"})
-    }
-    res.status(200).json({message:"loan updated successfully"},updateloan)
-    
-    try{
-         const username = await userModel.findById(authuserID)
-await sendMail(
-  authemail,
-  "Loan Updated Successfully",
-  `Dear ${username.name},
+
+        const authuserID = req.user;
+        const authemail = req.email;
+
+        // old loan
+        const oldLoan = await loan.findById(req.params.id);
+
+        if(!oldLoan){
+            return res.status(404).json({
+                message:"Loan not found"
+            });
+        }
+
+        // check whether schedule changed
+        const scheduleChanged =
+            oldLoan.term !== Number(req.body.term) ||
+            oldLoan.frequency !== req.body.frequency ||
+            oldLoan.date.toISOString().split("T")[0] !== req.body.date ||
+            oldLoan.installmentamount !== Number(req.body.installmentamount);
+
+
+
+        // update loan
+        const updatedLoan =
+            await loan.findByIdAndUpdate(
+                req.params.id,
+                {
+                    name:req.body.name,
+                    totalamount:Number(req.body.totalamount),
+                    frequency:req.body.frequency,
+                    date:req.body.date,
+                    installmentamount:Number(req.body.installmentamount),
+                    term:Number(req.body.term),
+
+                    paidAmount:0,
+                    unpaidAmount:Number(req.body.totalamount),
+                    paidCount:0,
+                    unpaidCount:Number(req.body.term)
+                },
+                {new:true}
+            );
+
+        // recreate installments only if needed
+        if(scheduleChanged){
+
+            console.log(
+                "Schedule changed. Recreating installments..."
+            );
+
+            // delete old installments
+            await installmentModel.deleteMany({
+                loanId:req.params.id
+            });
+
+            const installments=[];
+
+            for(let i=0;i<updatedLoan.term;i++){
+
+                const dueDate =
+                    new Date(updatedLoan.date);
+
+                if(updatedLoan.frequency==="d"){
+                    dueDate.setDate(
+                        dueDate.getDate()+i
+                    );
+                }
+
+                else if(updatedLoan.frequency==="w"){
+                    dueDate.setDate(
+                        dueDate.getDate()+(i*7)
+                    );
+                }
+
+                else if(updatedLoan.frequency==="m"){
+                    dueDate.setMonth(
+                        dueDate.getMonth()+i
+                    );
+                }
+
+                else if(updatedLoan.frequency==="y"){
+                    dueDate.setFullYear(
+                        dueDate.getFullYear()+i
+                    );
+                }
+
+                installments.push({
+                    loanId:updatedLoan._id,
+                    dueDate,
+                    installmentamount:
+                        updatedLoan.installmentamount,
+                    paid:false,
+                    userID:authuserID
+                });
+            }
+
+            await installmentModel.insertMany(
+                installments
+            );
+
+            console.log(
+                "Installments recreated:",
+                installments.length
+            );
+        }
+
+        res.status(200).json({
+            message:"Loan updated successfully",
+            updatedLoan
+        });
+
+        // email
+        try{
+
+            const username =
+                await userModel.findById(
+                    authuserID
+                );
+
+            await sendMail(
+                authemail,
+                "Loan Updated Successfully",
+`Dear ${username.name},
 
 Your loan details have been updated successfully.
 
-Loan Name: ${updateloan.name}
-Total Amount: ₹${updateloan.totalamount}
-Installment Amount: ₹${updateloan.installmentamount}
-Total Installments: ${updateloan.term}
+Loan Name:
+${updatedLoan.name}
 
-Thank you for using FinFamily.
+Total Amount:
+₹${updatedLoan.totalamount}
+
+Installment Amount:
+₹${updatedLoan.installmentamount}
+
+Total Installments:
+${updatedLoan.term}
+
+Frequency:
+${updatedLoan.frequency}
 
 Best Regards,
 FinFamily Team`
-);
+            );
+
+        }catch(err){
+            console.log(
+                "Email error:",
+                err.message
+            );
+        }
+
     }catch(err){
-        console.log("Email error",err.message)
-    }
-    }catch(err){
-    res.status(500).json({message:"error to update loan"})
+
+        console.log(err);
+
+        res.status(500).json({
+            message:"Error updating loan"
+        });
     }
 }
-
 const deleteLoan =async(req,res)=>{
     try{
         const authuserID =req.user
